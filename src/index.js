@@ -1,6 +1,8 @@
+// src/index.js
 const express = require('express');
 const QRCode = require('qrcode');
 const { Client } = require('whatsapp-web.js');
+const { createServer } = require('@vercel/node');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -64,6 +66,5 @@ app.get('/', async (req, res) => {
 // Initialize the client
 client.initialize();
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+// Export the app as a serverless function
+module.exports = createServer(app);
