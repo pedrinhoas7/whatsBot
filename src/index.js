@@ -10,7 +10,7 @@ let qrCodeData = ''; // To store the QR code data
 // Create a new instance of the client
 const client = new Client({
     puppeteer: {
-        headless: false,
+        headless: true,
         args: ['--no-sandbox'],
         timeout: 60000 // Increased timeout to 60 seconds
     }
@@ -60,6 +60,8 @@ app.get('/', async (req, res) => {
         res.status(500).send('Error generating QR Code');
     }
 });
+
+app.listen(port, () => {});
 
 // Initialize the client
 client.initialize();
