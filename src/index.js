@@ -10,10 +10,11 @@ const client = new Client({
     }
 });
 
-
 // Gera o QR Code para autenticação
 client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
+    qrcode.generate(qr, { small: true }, (qrCodeAscii) => {
+        console.log(qrCodeAscii);
+    });
 });
 
 // Exibe uma mensagem quando o cliente estiver autenticado
@@ -24,7 +25,6 @@ client.on('ready', () => {
 // Responde a mensagens recebidas
 client.on('message', message => {
     console.log(`Mensagem recebida: ${message.body}`);
-    console.log(`Mensagem recebida: ${message}`);
     if (message.body.toLowerCase().includes('consulta')) {
         message.reply('Para agendar uma consulta, por favor, ligue para (XX) XXXXX-XXXX ou acesse nosso site.');
     } else if (message.body.toLowerCase().includes('horário')) {
@@ -34,7 +34,19 @@ client.on('message', message => {
     } else if (message.body.toLowerCase().includes('olá')){
         message.reply('Olá! Como posso ajudá-lo? Você pode perguntar sobre consulta, horário de atendimento ou pedir para falar com um fonoaudiólogo.');
     }
-    
+});
+
+// Adiciona tratamento de erros
+client.on('auth_failure', (message) => {
+    console.error('Falha na autenticação:', message);
+});
+
+client.on('disconnected', (reason) => {
+    console.log('Cliente desconectado:', reason);
+});
+
+client.on('error', (error) => {
+    console.error('Erro do cliente:', error);
 });
 
 // Inicia o cliente
