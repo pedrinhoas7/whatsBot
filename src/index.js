@@ -1,53 +1,69 @@
-const qrcode = require('qrcode-terminal');
+const express = require('express');
+const QRCode = require('qrcode');
 const { Client } = require('whatsapp-web.js');
 
-// Crie uma nova instância do cliente
+const app = express();
+const port = process.env.PORT || 3000;
+
+let qrCodeData = ''; // To store the QR code data
+
+// Create a new instance of the client
 const client = new Client({
     puppeteer: {
         headless: false,
         args: ['--no-sandbox'],
-        timeout: 600000 // Aumenta o timeout para 60 segundos
+        timeout: 60000 // Increased timeout to 60 seconds
     }
 });
 
-// Gera o QR Code para autenticação
+// Generate QR Code for authentication
 client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true }, (qrCodeAscii) => {
-        console.log(qrCodeAscii);
-    });
+    qrCodeData = qr; // Store QR Code data
+    console.log('QR Code data:', qr);
 });
 
-// Exibe uma mensagem quando o cliente estiver autenticado
+// Display a message when the client is authenticated
 client.on('ready', () => {
-    console.log('Cliente está pronto!');
+    console.log('Client is ready!');
 });
 
-// Responde a mensagens recebidas
+// Respond to received messages
 client.on('message', message => {
-    console.log(`Mensagem recebida: ${message.body}`);
+    console.log(`Message received: ${message.body}`);
     if (message.body.toLowerCase().includes('consulta')) {
-        message.reply('Para agendar uma consulta, por favor, ligue para (XX) XXXXX-XXXX ou acesse nosso site.');
+        message.reply('To schedule a consultation, please call (XX) XXXXX-XXXX or visit our website.');
     } else if (message.body.toLowerCase().includes('horário')) {
-        message.reply('Nossos horários de atendimento são de segunda a sexta, das 9h às 18h.');
+        message.reply('Our business hours are Monday to Friday, from 9 AM to 6 PM.');
     } else if (message.body.toLowerCase().includes('falar com')) {
-        message.reply('Em breve, um fonoaudiólogo entrará em contato com você.');
-    } else if (message.body.toLowerCase().includes('olá')){
-        message.reply('Olá! Como posso ajudá-lo? Você pode perguntar sobre consulta, horário de atendimento ou pedir para falar com um fonoaudiólogo.');
+        message.reply('A speech therapist will contact you soon.');
+    } else if (message.body.toLowerCase().includes('olá')) {
+        message.reply('Hello! How can I assist you? You can ask about consultations, business hours, or request to speak with a speech therapist.');
     }
 });
 
-// Adiciona tratamento de erros
-client.on('auth_failure', (message) => {
-    console.error('Falha na autenticação:', message);
+app.get('/', async (req, res) => {
+    if (!qrCodeData) {
+        res.status(500).send('QR Code data is not available yet.');
+        return;
+    }
+
+    try {
+        QRCode.toBuffer(qrCodeData, (err, buffer) => {
+            if (err) {
+                res.status(500).send('Error generating QR Code');
+            } else {
+                res.setHeader('Content-Type', 'image/png');
+                res.send(buffer);
+            }
+        });
+    } catch (error) {
+        res.status(500).send('Error generating QR Code');
+    }
 });
 
-client.on('disconnected', (reason) => {
-    console.log('Cliente desconectado:', reason);
-});
-
-client.on('error', (error) => {
-    console.error('Erro do cliente:', error);
-});
-
-// Inicia o cliente
+// Initialize the client
 client.initialize();
+
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});
