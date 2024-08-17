@@ -1,25 +1,24 @@
-const express = require('express');
+const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const { Client } = require('whatsapp-web.js');
+const express = require('express');
 
 const app = express();
-const port = process.env.PORT || 3000;
+let qrCodeData = null;
 
-let qrCodeData = ''; // To store the QR code data
-
-// Create a new instance of the client
+// Create a new client instance
 const client = new Client({
     puppeteer: {
         headless: false,
         args: ['--no-sandbox'],
-        timeout: 60000 // Increased timeout to 60 seconds
+        timeout: 600000 // Increase the timeout to 60 seconds
     }
 });
 
-// Generate QR Code for authentication
+// Generate the QR code for authentication
 client.on('qr', (qr) => {
-    qrCodeData = qr; // Store QR Code data
-    console.log('QR Code data:', qr);
+    qrcode.generate(qr, { small: true });
+    qrCodeData = qr; // Save QR code data for later
 });
 
 // Display a message when the client is authenticated
@@ -33,7 +32,7 @@ client.on('message', message => {
     if (message.body.toLowerCase().includes('consulta')) {
         message.reply('To schedule a consultation, please call (XX) XXXXX-XXXX or visit our website.');
     } else if (message.body.toLowerCase().includes('horário')) {
-        message.reply('Our business hours are Monday to Friday, from 9 AM to 6 PM.');
+        message.reply('Our office hours are Monday to Friday, from 9 AM to 6 PM.');
     } else if (message.body.toLowerCase().includes('falar com')) {
         message.reply('A speech therapist will contact you soon.');
     } else if (message.body.toLowerCase().includes('olá')) {
@@ -41,9 +40,10 @@ client.on('message', message => {
     }
 });
 
+// Endpoint to get the QR code
 app.get('/', async (req, res) => {
     if (!qrCodeData) {
-        res.status(500).send('QR Code data is not available yet.');
+        res.status(500).send('QR Code not available');
         return;
     }
 
@@ -64,6 +64,4 @@ app.get('/', async (req, res) => {
 // Initialize the client
 client.initialize();
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+module.exports = app;
